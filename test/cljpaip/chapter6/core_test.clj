@@ -57,3 +57,45 @@
 
   (t/is (= {:x 5}
            (sut/pat-match '(?x (?if (> ?x 3)) (?if (< ?x 6))) '(5)))))
+
+(t/deftest test-paip-text
+  (t/testing "introduction"
+    (t/is (= {:n 34}
+             (sut/pat-match '(x = (?is ?n number?)) '(x = 34))))
+    (t/is (= sut/fail
+             (sut/pat-match '(x = (?is ?n number?)) '(x = x)))))
+
+  (t/testing "or pattern"
+    (t/is (= {:x 3, :y 4}
+             (sut/pat-match '(?x (?or < = >) ?y) '(3 < 4)))))
+
+  (t/testing "and pattern"
+    (t/is (= {:n 3}
+             (sut/pat-match '(x = (?and (?is ?n number?) (?is ?n odd?))) '(x = 3))))
+    (t/is (= sut/fail
+             (sut/pat-match '(x = (?and (?is ?n number?) (?is ?n odd?))) '(x = 4)))))
+
+  (t/testing "not pattern"
+    (t/is (= {:x 3}
+             (sut/pat-match '(?x != (?not ?x)) '(3 != 4))))
+    (t/is (= sut/fail
+             (sut/pat-match '(?x != (?not ?x)) '(3 != 3)))))
+
+  (t/testing "* pattern"
+    (t/is (= {:x ['b 'c]}
+             (sut/pat-match '(a (?* ?x) d) '(a b c d))))
+
+    (t/is (= {:x [] :y ['b 'c]}
+             (sut/pat-match '(a (?* ?x) (?* ?y) d) '(a b c d))))
+
+    (t/is (= {:x ['b 'c] :y ['d]}
+             (sut/pat-match '(a (?* ?x) (?* ?y) ?x ?y) '(a b c d (b c) (d))))))
+
+  (t/testing "if pattern"
+    (t/is (= {:x 3 :op '+ :y 4 :z 7}
+             (sut/pat-match '(?x ?op ?y is ?z (?if (= (?op ?x ?y) ?z)))
+                            '(3 + 4 is 7))))
+
+    (t/is (= sut/fail
+             (sut/pat-match '(?x ?op ?y (?if (?op ?x ?y)))
+                            '(3 > 4))))))
