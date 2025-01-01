@@ -82,7 +82,7 @@
 
 (defn match-is [args input bindings]
   (let [var (first args)
-        pred (second args)]
+        pred (resolve (second args))]
     (if (pred input)
       (pat-match var input bindings)
       fail)))
