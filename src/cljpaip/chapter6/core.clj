@@ -1,26 +1,5 @@
 (ns cljpaip.chapter6.core)
 
-;; > (pat-match '(x = (?is ?n numberp)) '(x = 34)) => ((?n . 34))
-;; > (pat-match '(x = (?is ?n numberp)) '(x = x)) => NIL
-;; > (pat-match '(?x (?or < = >) ?y) '(3 < 4)) => ((?Y . 4) (?X . 3))
-;; > (pat-match '(x = (?and (?is ?n numberp) (?is ?n oddp))) '(x = 3)) => ((?N . 3))
-;; > (pat-match '(?x /= (?not ?x)) '(3 /= 4)) => ((?X . 3))
-;; > (pat-match '(?x > ?y (?if (> ?x ?y))) '(4 > 3)) => ((?Y . 3) (?X . 4))
-
-;; > (pat-match '(x = ?n) nil) => nil
-;; > (pat-match '(x = ?n) '(x = 34)) => ((?n . 34))
-;; > (pat-match '(x = 34) '(x = 34) {:a 1}) => {:a 1}
-
-;; The pattern must be either
-;;   - variable
-;;   - constant
-;;   - (generalized) segment pattern
-;;   - (generalized) single-element pattern
-;;   - cons of two patterns
-
-(def fail nil)
-(def no-bindings {})
-
 (declare pat-match)
 
 (defmacro trap
@@ -39,8 +18,7 @@
   (let [k (-> var name (subs 1) keyword)
         binding (find bindings k)]
     (cond (nil? binding) (assoc bindings k input)
-          (= (val binding) input) bindings
-          :else fail)))
+          (= (val binding) input) bindings)))
 
 ;;; segment-match
 
@@ -48,13 +26,12 @@
   (let [segment-var (second (first pattern))
         rest-pattern (rest pattern)]
     (loop [start 0]
-      (if (> start (count input))
-        fail
+      (when-not (> start (count input))
         (let [prefix (take start input)
               suffix (drop start input)
               new-bindings (pat-match rest-pattern suffix
-                                       (match-variable segment-var prefix bindings))]
-          (if (= new-bindings fail)
+                                      (match-variable segment-var prefix bindings))]
+          (if (nil? new-bindings)
             (recur (inc start))
             new-bindings))))))
 
@@ -62,25 +39,23 @@
   (let [segment-var (second (first pattern))
         rest-pattern (rest pattern)]
     (loop [start 1]
-      (if (> start (count input))
-        fail
+      (when-not (> start (count input))
         (let [prefix (take start input)
               suffix (drop start input)
               new-bindings (pat-match rest-pattern suffix
-                                       (match-variable segment-var prefix bindings))]
-          (if (= new-bindings fail)
+                                      (match-variable segment-var prefix bindings))]
+          (if (nil? new-bindings)
             (recur (inc start))
             new-bindings))))))
 
 (defn segment-match-if [pattern input bindings]
   (let [body (second (first pattern))
         rest-pattern (rest pattern)]
-    (if (eval `(let ~(vec (mapcat
-                           (fn [[k v]] [(symbol (str "?" (name k))) v])
-                           bindings))
-                 ~body))
-      (pat-match rest-pattern input bindings)
-      fail)))
+    (when (eval `(let ~(vec (mapcat
+                             (fn [[k v]] [(symbol (str "?" (name k))) v])
+                             bindings))
+                   ~body))
+      (pat-match rest-pattern input bindings))))
 
 (def segment-match {'?* segment-matcher-*
                     '?+ segment-matcher-+
@@ -102,9 +77,8 @@
 (defn match-is [args input bindings]
   (let [var (first args)
         pred (resolve (second args))]
-    (if (pred input)
-      (pat-match var input bindings)
-      fail)))
+    (when (pred input)
+      (pat-match var input bindings))))
 
 (defn match-and [args input bindings]
   (if (= [] args)
@@ -112,16 +86,14 @@
     (match-and (rest args) input (pat-match (first args) input bindings))))
 
 (defn match-or [args input bindings]
-  (if (= [] args)
-    fail
+  (when-not (= [] args)
     (let [new-bindings (pat-match (first args) input bindings)]
-      (if (= new-bindings fail)
+      (if (nil? new-bindings)
         (match-or (rest args) input bindings)
         new-bindings))))
 
 (defn match-not [patterns input bindings]
-  (if (match-or patterns input bindings)
-    fail
+  (when-not (match-or patterns input bindings)
     bindings))
 
 (def single-match {'?is match-is
@@ -143,18 +115,17 @@
 
 (defn pat-match
   ([pattern input]
-   (pat-match pattern input no-bindings))
+   (pat-match pattern input {}))
   ([pattern input bindings]
    (cond
-     (= bindings fail) fail
+     (nil? bindings) nil
      (variable? pattern) (match-variable pattern input bindings)
      (= pattern input) bindings
      (segment-pattern? pattern) (segment-matcher pattern input bindings)
      (single-pattern? pattern) (single-matcher pattern input bindings)
      (and (sequential? pattern) (sequential? input))
      (pat-match (rest pattern) (rest input)
-                (pat-match (first pattern) (first input) bindings))
-     :else fail)))
+                (pat-match (first pattern) (first input) bindings)))))
 
 (defn eliza []
   (loop [_ nil]
