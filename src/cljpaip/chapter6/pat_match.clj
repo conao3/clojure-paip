@@ -22,31 +22,23 @@
 
 ;;; segment-match
 
-(defn segment-matcher-* [pattern input bindings]
-  (let [segment-var (second (first pattern))
-        rest-pattern (rest pattern)]
-    (loop [start 0]
-      (when-not (> start (count input))
-        (let [prefix (take start input)
-              suffix (drop start input)
-              new-bindings (pat-match rest-pattern suffix
-                                      (match-variable segment-var prefix bindings))]
-          (if (nil? new-bindings)
-            (recur (inc start))
-            new-bindings))))))
+(defn segment-matcher-*
+  ([pattern input bindings]
+   (segment-matcher-* pattern input bindings 0))
+  ([pattern input bindings start]
+   (let [segment-var (second (first pattern))
+         rest-pattern (rest pattern)]
+     (when-not (> start (count input))
+       (let [prefix (take start input)
+             suffix (drop start input)
+             new-bindings (pat-match rest-pattern suffix
+                                     (match-variable segment-var prefix bindings))]
+         (if (nil? new-bindings)
+           (recur pattern input bindings (inc start))
+           new-bindings))))))
 
 (defn segment-matcher-+ [pattern input bindings]
-  (let [segment-var (second (first pattern))
-        rest-pattern (rest pattern)]
-    (loop [start 1]
-      (when-not (> start (count input))
-        (let [prefix (take start input)
-              suffix (drop start input)
-              new-bindings (pat-match rest-pattern suffix
-                                      (match-variable segment-var prefix bindings))]
-          (if (nil? new-bindings)
-            (recur (inc start))
-            new-bindings))))))
+  (segment-matcher-* pattern input bindings 1))
 
 (defn segment-match-if [pattern input bindings]
   (let [body (second (first pattern))
