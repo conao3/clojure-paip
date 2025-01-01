@@ -34,12 +34,12 @@
       fail)
     (assoc bindings var input)))
 
-(defn segment-pattern? [pattern]
+(defn segment-pattern-*? [pattern]
   (and (sequential? pattern)
        (sequential? (first pattern))
        (= (first (first pattern)) :?*)))
 
-(defn segment-matcher [pattern input bindings]
+(defn segment-matcher-* [pattern input bindings]
   (let [segment-var (second (first pattern))
         rest-pattern (rest pattern)]
     (loop [start 0]
@@ -80,7 +80,7 @@
      (= bindings fail) fail
      (variable? pattern) (match-variable pattern input bindings)
      (= pattern input) bindings
-     (segment-pattern? pattern) (segment-matcher pattern input bindings)
+     (segment-pattern-*? pattern) (segment-matcher-* pattern input bindings)
      (segment-pattern-+? pattern) (segment-matcher-+ pattern input bindings)
      (and (sequential? pattern) (sequential? input))
      (pat-match (rest pattern) (rest input)
