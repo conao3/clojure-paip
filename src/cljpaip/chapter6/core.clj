@@ -21,10 +21,26 @@
 (def fail nil)
 (def no-bindings {})
 
-(defn pat-match [pattern input bindings]
-  (if (= pattern input)
-    bindings
-    fail))
+(defn variable? [x]
+  (and (keyword? x)
+       (some? (re-find #"^\?" (name x)))))
+
+(defn match-variable [var input bindings]
+  (if-let [bound (bindings var)]
+    (if (= bound input)
+      bindings
+      fail)
+    (assoc bindings var input)))
+
+(defn pat-match
+  ([pattern input]
+   (pat-match pattern input no-bindings))
+  ([pattern input bindings]
+   (cond
+     (= bindings fail) fail
+     (variable? pattern) (match-variable pattern input bindings)
+     (= pattern input) bindings
+     :else fail)))
 
 (defn eliza []
   (loop [_ nil]
