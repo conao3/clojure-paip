@@ -37,3 +37,9 @@
 
   (t/is (= {} (sut/pat-match [:?not 43] 42)))
   (t/is (= sut/fail (sut/pat-match [:?not 42] 42))))
+
+(t/deftest test-is-pattern
+  (t/is (= {:?x 42} (sut/pat-match [:?is :?x even?] 42)))
+  (t/is (= sut/fail (sut/pat-match [:?is :?x even?] 43)))
+  (t/is (= {:?x 43} (sut/pat-match [:?is :?x odd?] 43)))
+  (t/is (= sut/fail (sut/pat-match [:?is :?x odd?] 42))))

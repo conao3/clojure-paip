@@ -80,27 +80,33 @@
 
 ;;; single-match
 
-(defn match-and [patterns input bindings]
-  (reduce
-   (fn [b p]
-     (if (= b fail)
-       fail
-       (pat-match p input b)))
-   bindings
-   patterns))
+(defn match-is [args input bindings]
+  (let [var (first args)
+        pred (second args)]
+    (if (pred input)
+      (pat-match var input bindings)
+      fail)))
 
-(defn match-or [patterns input bindings]
-  (some
-   #(let [b (pat-match % input bindings)]
-      (if (= b fail) nil b))
-   patterns))
+(defn match-and [args input bindings]
+  (if (= [] args)
+    bindings
+    (match-and (rest args) input (pat-match (first args) input bindings))))
+
+(defn match-or [args input bindings]
+  (if (= [] args)
+    fail
+    (let [new-bindings (pat-match (first args) input bindings)]
+      (if (= new-bindings fail)
+        (match-or (rest args) input bindings)
+        new-bindings))))
 
 (defn match-not [patterns input bindings]
   (if (match-or patterns input bindings)
     fail
     bindings))
 
-(def single-match {:?and match-and
+(def single-match {:?is match-is
+                   :?and match-and
                    :?or match-or
                    :?not match-not})
 
@@ -109,7 +115,7 @@
 
 (defn single-pattern? [pattern]
   (and (sequential? pattern)
-       (single-match-fn pattern)))
+       (some? (single-match-fn pattern))))
 
 (defn single-matcher [pattern input bindings]
   ((single-match-fn pattern) (rest pattern) input bindings))
