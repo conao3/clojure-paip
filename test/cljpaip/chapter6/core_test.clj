@@ -14,3 +14,9 @@
   (t/is (= (sut/pat-match [:?x 43] [42 43]) {:?x 42}))
   (t/is (= (sut/pat-match [:?x 43] [42 44]) sut/fail))
   (t/is (= (sut/pat-match [[:?x] 43] [[42] 43]) {:?x 42})))
+
+(t/deftest test-segment-patterns
+  (t/is (= (sut/pat-match [[:?* :?x] 42] [42]) {:?x []}))
+  (t/is (= (sut/pat-match [[:?* :?x] 42] [7 42]) {:?x [7]}))
+  (t/is (= (sut/pat-match [[:?* :?x] 42] [7 8 42]) {:?x [7 8]}))
+  (t/is (= (sut/pat-match [[:?* :?x] 42] [7 8 43]) sut/fail)))

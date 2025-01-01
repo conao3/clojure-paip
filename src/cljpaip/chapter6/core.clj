@@ -21,6 +21,8 @@
 (def fail nil)
 (def no-bindings {})
 
+(declare pat-match)
+
 (defn variable? [x]
   (and (keyword? x)
        (some? (re-find #"^\?" (name x)))))
@@ -32,6 +34,25 @@
       fail)
     (assoc bindings var input)))
 
+(defn segment-pattern? [pattern]
+  (and (sequential? pattern)
+       (sequential? (first pattern))
+       (= (first (first pattern)) :?*)))
+
+(defn segment-matcher [pattern input bindings]
+  (let [segment-var (second (first pattern))
+        rest-pattern (rest pattern)]
+    (loop [start 0]
+      (if (> start (count input))
+        fail
+        (let [prefix (take start input)
+              suffix (drop start input)
+              new-bindings (pat-match rest-pattern suffix
+                                       (match-variable segment-var prefix bindings))]
+          (if (= new-bindings fail)
+            (recur (inc start))
+            new-bindings))))))
+
 (defn pat-match
   ([pattern input]
    (pat-match pattern input no-bindings))
@@ -40,6 +61,7 @@
      (= bindings fail) fail
      (variable? pattern) (match-variable pattern input bindings)
      (= pattern input) bindings
+     (segment-pattern? pattern) (segment-matcher pattern input bindings)
      (and (sequential? pattern) (sequential? input))
      (pat-match (rest pattern) (rest input)
                 (pat-match (first pattern) (first input) bindings))
