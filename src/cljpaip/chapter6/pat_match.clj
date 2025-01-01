@@ -40,6 +40,12 @@
 (defn segment-matcher-+ [pattern input bindings]
   (segment-matcher-* pattern input bindings 1))
 
+(defn segment-matcher-? [pattern input bindings]
+  (let [segment-var (second (first pattern))
+        rest-pattern (rest pattern)]
+    (or (pat-match (cons segment-var rest-pattern) input bindings)
+        (pat-match rest-pattern input bindings))))
+
 (defn segment-match-if [pattern input bindings]
   (let [body (second (first pattern))
         rest-pattern (rest pattern)]
@@ -51,6 +57,7 @@
 
 (def segment-match {'?* segment-matcher-*
                     '?+ segment-matcher-+
+                    '?? segment-matcher-?
                     '?if segment-match-if})
 
 (defn segment-match-fn [pattern]
