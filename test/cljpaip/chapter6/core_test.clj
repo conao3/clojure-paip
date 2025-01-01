@@ -26,3 +26,14 @@
   (t/is (= {:?x [7]} (sut/pat-match [[:?+ :?x] 42] [7 42])))
   (t/is (= {:?x [7 8]} (sut/pat-match [[:?+ :?x] 42] [7 8 42])))
   (t/is (= sut/fail (sut/pat-match [[:?+ :?x] 42] [7 8 43]))))
+
+(t/deftest test-logical-patterns
+  (t/is (= {} (sut/pat-match [:?and 42 42] 42)))
+  (t/is (= sut/fail (sut/pat-match [:?and 42 43] 42)))
+
+  (t/is (= {} (sut/pat-match [:?or 42 43] 42)))
+  (t/is (= {} (sut/pat-match [:?or 42 43] 43)))
+  (t/is (= sut/fail (sut/pat-match [:?or 42 43] 44)))
+
+  (t/is (= {} (sut/pat-match [:?not 43] 42)))
+  (t/is (= sut/fail (sut/pat-match [:?not 42] 42))))

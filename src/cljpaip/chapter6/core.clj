@@ -34,6 +34,8 @@
       fail)
     (assoc bindings var input)))
 
+;;; segment-match
+
 (defn segment-matcher-* [pattern input bindings]
   (let [segment-var (second (first pattern))
         rest-pattern (rest pattern)]
@@ -76,6 +78,44 @@
 (defn segment-matcher [pattern input bindings]
   ((segment-match-fn pattern) pattern input bindings))
 
+;;; single-match
+
+(defn match-and [patterns input bindings]
+  (reduce
+   (fn [b p]
+     (if (= b fail)
+       fail
+       (pat-match p input b)))
+   bindings
+   patterns))
+
+(defn match-or [patterns input bindings]
+  (some
+   #(let [b (pat-match % input bindings)]
+      (if (= b fail) nil b))
+   patterns))
+
+(defn match-not [patterns input bindings]
+  (if (match-or patterns input bindings)
+    fail
+    bindings))
+
+(def single-match {:?and match-and
+                   :?or match-or
+                   :?not match-not})
+
+(defn single-match-fn [pattern]
+  (get single-match (first pattern)))
+
+(defn single-pattern? [pattern]
+  (and (sequential? pattern)
+       (single-match-fn pattern)))
+
+(defn single-matcher [pattern input bindings]
+  ((single-match-fn pattern) (rest pattern) input bindings))
+
+;;; main
+
 (defn pat-match
   ([pattern input]
    (pat-match pattern input no-bindings))
@@ -85,6 +125,7 @@
      (variable? pattern) (match-variable pattern input bindings)
      (= pattern input) bindings
      (segment-pattern? pattern) (segment-matcher pattern input bindings)
+     (single-pattern? pattern) (single-matcher pattern input bindings)
      (and (sequential? pattern) (sequential? input))
      (pat-match (rest pattern) (rest input)
                 (pat-match (first pattern) (first input) bindings))
