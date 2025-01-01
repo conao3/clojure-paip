@@ -47,3 +47,13 @@
   (t/is (= {:n 34} (sut/pat-match '(x = ?n) '(x = 34))))
   (t/is (= {:n 34} (sut/pat-match '(x = (?is ?n number?)) '(x = 34))))
   (t/is (= sut/fail (sut/pat-match '(x = (?is ?n string?)) '(x = 34)))))
+
+(t/deftest test-if-pattern
+  (t/is (= {:x 4 :y 3}
+           (sut/pat-match '(?x > ?y (?if (> ?x ?y))) '(4 > 3))))
+
+  (t/is (= sut/fail
+           (sut/pat-match '(?x > ?y (?if (> ?x ?y))) '(3 > 4))))
+
+  (t/is (= {:x 5}
+           (sut/pat-match '(?x (?if (> ?x 3)) (?if (< ?x 6))) '(5)))))

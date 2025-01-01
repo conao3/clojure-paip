@@ -72,8 +72,19 @@
             (recur (inc start))
             new-bindings))))))
 
+(defn segment-match-if [pattern input bindings]
+  (let [body (second (first pattern))
+        rest-pattern (rest pattern)]
+    (if (eval `(let ~(vec (mapcat
+                           (fn [[k v]] [(symbol (str "?" (name k))) v])
+                           bindings))
+                 ~body))
+      (pat-match rest-pattern input bindings)
+      fail)))
+
 (def segment-match {'?* segment-matcher-*
-                    '?+ segment-matcher-+})
+                    '?+ segment-matcher-+
+                    '?if segment-match-if})
 
 (defn segment-match-fn [pattern]
   (get segment-match (first (first pattern))))
