@@ -36,11 +36,11 @@
   (some? ((fnil re-find nil "") #"^\?" (trap (name x)))))
 
 (defn match-variable [var input bindings]
-  (if-let [bound (bindings var)]
-    (if (= bound input)
-      bindings
-      fail)
-    (assoc bindings (-> var name (subs 1) keyword) input)))
+  (let [k (-> var name (subs 1) keyword)
+        binding (find bindings k)]
+    (cond (nil? binding) (assoc bindings k input)
+          (= (val binding) input) bindings
+          :else fail)))
 
 ;;; segment-match
 
