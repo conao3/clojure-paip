@@ -1,4 +1,4 @@
-(ns cljpaip.chapter6.core)
+(ns cljpaip.chapter6.pat-match)
 
 (declare pat-match)
 
@@ -126,24 +126,3 @@
      (and (sequential? pattern) (sequential? input))
      (pat-match (rest pattern) (rest input)
                 (pat-match (first pattern) (first input) bindings)))))
-
-(defn eliza []
-  (loop [_ nil]
-    (println "eliza>")
-    (recur (println (read)))))
-
-(defn lisp []
-  (loop [_ nil]
-    (println ">")
-    (recur (println (eval (read))))))
-
-(defn interactive-interpreter [prompt transformer]
-  (loop [_ nil]
-    (println prompt)
-    (recur (println (transformer (read))))))
-
-(defn lisp-mod1 []
-  (interactive-interpreter ">" eval))
-
-(defn eliza-mod1 []
-  (interactive-interpreter "eliza>" identity))
