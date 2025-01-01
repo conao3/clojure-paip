@@ -40,6 +40,9 @@
      (= bindings fail) fail
      (variable? pattern) (match-variable pattern input bindings)
      (= pattern input) bindings
+     (and (sequential? pattern) (sequential? input))
+     (pat-match (rest pattern) (rest input)
+                (pat-match (first pattern) (first input) bindings))
      :else fail)))
 
 (defn eliza []
