@@ -23,16 +23,24 @@
 
 (declare pat-match)
 
+(defmacro trap
+  ([body]
+   `(trap ~body nil))
+  ([body fallback]
+   `(try
+      ~body
+      (catch Exception _#
+        ~fallback))))
+
 (defn variable? [x]
-  (and (keyword? x)
-       (some? (re-find #"^\?" (name x)))))
+  (some? ((fnil re-find nil "") #"^\?" (trap (name x)))))
 
 (defn match-variable [var input bindings]
   (if-let [bound (bindings var)]
     (if (= bound input)
       bindings
       fail)
-    (assoc bindings var input)))
+    (assoc bindings (-> var name (subs 1) keyword) input)))
 
 ;;; segment-match
 
@@ -64,8 +72,8 @@
             (recur (inc start))
             new-bindings))))))
 
-(def segment-match {:?* segment-matcher-*
-                    :?+ segment-matcher-+})
+(def segment-match {'?* segment-matcher-*
+                    '?+ segment-matcher-+})
 
 (defn segment-match-fn [pattern]
   (get segment-match (first (first pattern))))
@@ -105,10 +113,10 @@
     fail
     bindings))
 
-(def single-match {:?is match-is
-                   :?and match-and
-                   :?or match-or
-                   :?not match-not})
+(def single-match {'?is match-is
+                   '?and match-and
+                   '?or match-or
+                   '?not match-not})
 
 (defn single-match-fn [pattern]
   (get single-match (first pattern)))
