@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -euxo pipefail -o posix
+
+clear
+sbcl --eval "(progn (load \"$1\") (quit))" 2>&1
