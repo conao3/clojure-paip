@@ -20,4 +20,41 @@
     (sut/<- (member ?item (?item . ?rest))))
   (t/is (= "\nYes;" (with-out-str (sut/?- (member 2 (1 2 3))))))
   (t/is (= "\nYes;\nYes;" (with-out-str (sut/?- (member 2 (1 2 3 2 1))))))
-  (t/is (= "\n?x = 1;\n?x = 2;\n?x = 3;" (with-out-str (sut/?- (member ?x (1 2 3)))))))
+  (t/is (= "\n?x = 1;\n?x = 2;\n?x = 3;" (with-out-str (sut/?- (member ?x (1 2 3))))))
+
+  (do
+    (sut/clear-db)
+    (sut/<- (likes Kim Robin))
+    (sut/<- (likes Sandy Lee))
+    (sut/<- (likes Sandy Kim))
+    (sut/<- (likes Robin cats))
+    (sut/<- (likes Sandy ?x) (likes ?x cats))
+    (sut/<- (likes Kim ?x) (likes ?x Lee) (likes ?x Kim))
+    (sut/<- (likes ?x ?x)))
+  (t/is (= "
+?who = Sandy;
+?who = cats;
+?who = Sandy;
+?who = Robin;
+?who = Kim;
+?who = Lee;" (with-out-str (sut/?- (likes Sandy ?who)))))
+  (t/is (= "
+?who = Sandy;
+?who = Kim;
+?who = Sandy;" (with-out-str (sut/?- (likes ?who Sandy)))))
+  (t/is (= "\nNo." (with-out-str (sut/?- (likes Robin Lee)))))
+  ;; this test is flaky because of (gensym)
+  ;; (t/is (= "
+  ;; ?y = ?x18483
+  ;; ?x = ?x18483;
+  ;; ?y = Sandy
+  ;; ?x = Sandy;
+  ;; ?y = Sandy
+  ;; ?x = Kim;
+  ;; ?y = Sandy
+  ;; ?x = Sandy;
+  ;; ?y = Sandy
+  ;; ?x = Sandy;
+  ;; ?y = Kim
+  ;; ?x = Sandy;" (with-out-str (sut/?- (likes ?x ?y) (likes ?y ?x)))))
+  )

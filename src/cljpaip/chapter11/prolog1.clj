@@ -73,7 +73,7 @@
 
 (defn show-prolog-solutions [vars solutions]
   (if (empty? solutions)
-    (println "\nNo.")
+    (print "\nNo.")
     (doseq [solution solutions]
       (show-prolog-vars vars solution))))
 
