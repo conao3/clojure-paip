@@ -43,18 +43,19 @@
 ?who = Kim;
 ?who = Sandy;" (with-out-str (sut/?- (likes ?who Sandy)))))
   (t/is (= "\nNo." (with-out-str (sut/?- (likes Robin Lee)))))
-  ;; this test is flaky because of (gensym)
-  ;; (t/is (= "
-  ;; ?y = ?x18483
-  ;; ?x = ?x18483;
-  ;; ?y = Sandy
-  ;; ?x = Sandy;
-  ;; ?y = Sandy
-  ;; ?x = Kim;
-  ;; ?y = Sandy
-  ;; ?x = Sandy;
-  ;; ?y = Sandy
-  ;; ?x = Sandy;
-  ;; ?y = Kim
-  ;; ?x = Sandy;" (with-out-str (sut/?- (likes ?x ?y) (likes ?y ?x)))))
-  )
+  (t/is (= "
+?y = ?x37
+?x = ?x37;
+?y = Sandy
+?x = Sandy;
+?y = Sandy
+?x = Kim;
+?y = Sandy
+?x = Sandy;
+?y = Sandy
+?x = Sandy;
+?y = Kim
+?x = Sandy;"
+           (let [gensym-cnt (atom 0)]
+             (with-redefs [gensym #(-> % (str (swap! gensym-cnt inc)) symbol)]
+               (with-out-str (sut/?- (likes ?x ?y) (likes ?y ?x))))))))
