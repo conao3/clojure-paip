@@ -186,6 +186,8 @@
 
 ;;; scratch
 
+(setf *print-pretty* nil)
+
 (format t "db: ~a~&" *db-predicates*)
 
 (<- (member ?item (?item . ?rest)))
