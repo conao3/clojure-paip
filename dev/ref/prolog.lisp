@@ -218,6 +218,8 @@
 
 ;;; scratch
 
+(setq *print-pretty* nil)
+
 (format t "db: ~a~&" *db-predicates*)
 
 (<- (member ?item (?item . ?rest)))
@@ -228,4 +230,15 @@
 (format t "db: ~a~&" *db-predicates*)
 (format t "db.member: ~a~&" (get-clauses 'member))
 
-(?- (member 2 (1 2 3)))
+(<- (length () 0))
+(<- (length (?x . ?y) (1 + ?n)) (length ?y ?n))
+(format t "db.length: ~a~&" (get-clauses 'length))
+
+;; (?- (member 2 (1 2 3)))
+;; (?- (member 2 ?list))
+;; (format t "~&~a" (unify '(member 2 ?x) '(member ?y (?y . ?z))))
+;; (format t "~&~a" (occurs-check '?x '(?y . ?z) '((?y . 2))))
+
+;; (?- (length () ?n))
+(?- (length (a) ?n))
+;; (?- (length (a b c d) ?n))

@@ -2,11 +2,12 @@
   (:require
    [cljpaip.chapter6.pat-match :refer [variable?]]
    [cljpaip.chapter6.eliza :refer [sublis]]
-   [cljpaip.chapter11.unify :refer [unify subst-bindings]]))
+   [cljpaip.chapter11.unify :refer [cdr unify subst-bindings]]))
 
 (declare prove-all)
 
-(def db-predicates (atom nil))
+(defonce db-predicates (atom #{}))
+(defonce db-clauses (atom nil))
 
 (defn clause-head [clause]
   (first clause))
@@ -15,18 +16,20 @@
   (rest clause))
 
 (defn get-clauses [pred]
-  (get @db-predicates pred))
+  (get @db-clauses pred))
 
 (defn predicate [relation]
   (first relation))
 
 (defn add-clause [clause]
   (let [pred (predicate (clause-head clause))]
-    (swap! db-predicates update pred conj clause)
+    (swap! db-predicates conj pred)
+    (swap! db-clauses update pred conj clause)
     pred))
 
 (defn clear-db []
-  (reset! db-predicates nil))
+  (reset! db-predicates #{})
+  (reset! db-clauses nil))
 
 (defn non-anon-variable-p [x]
   (and (variable? x) (not (= x '?))))
@@ -58,15 +61,15 @@
   ([goal bindings other-goals depth]
    (println (apply str (repeat depth " ")) {:goal goal :bindings bindings :other-goals other-goals})
    (let [res (let [clauses (get-clauses (predicate goal))]
-               (if (or (sequential? clauses) (nil? clauses))
+               (if (sequential? clauses)
                  (some (fn [clause]
                          (let [new-clause (rename-variables clause)]
                            (prove-all
-                            (cons (clause-body new-clause) other-goals)
+                            (concat (clause-body new-clause) other-goals)
                             (unify goal (clause-head new-clause) bindings)
                             (inc depth))))
                        clauses)
-                 (clauses (next goal) bindings other-goals)))]
+                 (clauses (cdr goal) bindings other-goals)))]
      (println (apply str (repeat depth " ")) {:res res})
      res)))
 
@@ -78,12 +81,12 @@
    (let [res (cond
                (nil? bindings) nil
                (or (nil? goals) (empty? goals)) bindings
-               :else (prove (first goals) bindings (next goals) (inc depth)))]
+               :else (prove (first goals) bindings (cdr goals) (inc depth)))]
      (println (apply str (repeat depth " ")) {:res res})
      res)))
 
 (defn continue? []
-  (case (read)
+  (case (read-line)
     ";" true
     "." nil
     "" (recur)
@@ -100,7 +103,7 @@
     (prove-all other-goals bindings)))
 
 (defn top-level-prove [goals]
-  (prove-all `(~@goals (show-prolog-vars ~@(variables-in goals))) {})
+  (prove-all `(~@goals (~'show-prolog-vars ~@(variables-in goals))) {})
   (print "\nNo."))
 
 (defn replace-?-vars [exp]

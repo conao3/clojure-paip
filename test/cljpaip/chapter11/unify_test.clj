@@ -28,5 +28,15 @@
     (t/is (= '{?x (?y ?z) ?y (?x ?z) ?z (?x ?y)} (sut/unify '(?x ?y ?z) '((?y ?z) (?x ?z) (?x ?y)))))))
 
 (t/deftest cons-unify-test
-  (t/is '{?a 2 ?b 1 ?c (2 3)}
-        (sut/unify '(member 2 (1 2 3)) '(member ?a (?b . ?c)))))
+  (t/is (= '{?a 2 ?b 1 ?c (2 3)}
+           (sut/unify '(member 2 (1 2 3)) '(member ?a (?b . ?c))))))
+
+(t/deftest member-test
+  (t/is (= '{?y 2}
+           (sut/unify '(member 2) '(member ?y))))
+  (t/is (= '{?y 2, ?z (?x)}
+           (sut/unify '(member 2 ?x) '(member ?y . ?z))))
+
+  (t/is (nil? (sut/occur? '?x '(?y . ?z) '{?y 2})))
+  (t/is (= '{?y 2 ?x (?y . ?z)}
+           (sut/unify '(member 2 ?x) '(member ?y (?y . ?z))))))
