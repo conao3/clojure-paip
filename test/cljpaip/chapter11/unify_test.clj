@@ -40,3 +40,6 @@
   (t/is (nil? (sut/occur? '?x '(?y . ?z) '{?y 2})))
   (t/is (= '{?y 2 ?x (?y . ?z)}
            (sut/unify '(member 2 ?x) '(member ?y (?y . ?z))))))
+
+(t/deftest nil-test
+  (t/is (= {} (sut/unify '() nil))))

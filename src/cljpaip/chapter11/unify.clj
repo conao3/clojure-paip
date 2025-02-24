@@ -56,6 +56,9 @@
    (cond
      (nil? bindings) nil
      (= x y) bindings
+     (or (and (nil? x) (= [] y))
+         (and (nil? y) (= [] x)))
+     bindings
      (variable? x) (unify-variable x y bindings)
      (variable? y) (unify-variable y x bindings)
      (and (sequential? x) (sequential? y))
