@@ -10,20 +10,8 @@
 (defonce db-predicates (atom #{}))
 (defonce db-clauses (atom nil))
 
-(defn clause-head [clause]
-  (first clause))
-
-(defn clause-body [clause]
-  (rest clause))
-
-(defn get-clauses [pred]
-  (get @db-clauses pred))
-
-(defn predicate [relation]
-  (first relation))
-
 (defn add-clause [clause]
-  (let [pred (predicate (clause-head clause))]
+  (let [pred (first (first clause))]
     (swap! db-predicates conj pred)
     (swap! db-clauses update pred conj clause)
     pred))
@@ -56,29 +44,22 @@
                (into {}))
           x))
 
-(defn prove
-  ([goal bindings other-goals]
-   (prove goal bindings other-goals 0))
-  ([goal bindings other-goals depth]
-   (let [clauses (get-clauses (predicate goal))]
-     (if (or (sequential? clauses) (nil? clauses))
-       (some (fn [clause]
-               (let [new-clause (rename-variables clause)]
-                 (prove-all
-                  (concat (clause-body new-clause) other-goals)
-                  (unify goal (clause-head new-clause) bindings)
-                  (inc depth))))
-             clauses)
-       (clauses (cdr goal) bindings other-goals)))))
+(defn prove [goal bindings other-goals]
+  (let [clauses (get @db-clauses (first goal))]
+    (if (or (sequential? clauses) (nil? clauses))
+      (some (fn [clause]
+              (let [new-clause (rename-variables clause)]
+                (prove-all
+                 (concat (rest new-clause) other-goals)
+                 (unify goal (first new-clause) bindings))))
+            clauses)
+      (clauses (cdr goal) bindings other-goals))))
 
-(defn prove-all
-  ([goals bindings]
-   (prove-all goals bindings 0))
-  ([goals bindings depth]
-   (cond
-     (nil? bindings) nil
-     (or (nil? goals) (empty? goals)) bindings
-     :else (prove (first goals) bindings (cdr goals) (inc depth)))))
+(defn prove-all [goals bindings]
+  (cond
+    (nil? bindings) nil
+    (or (nil? goals) (empty? goals)) bindings
+    :else (prove (first goals) bindings (cdr goals))))
 
 (defn continue? []
   (case (read-line)
