@@ -52,14 +52,17 @@
         (t (extend-bindings var x bindings))))
 (defun unify (x y &optional (bindings no-bindings))
   "See if x and y match with given bindings."
-  (cond ((eq bindings fail) fail)
-        ((eql x y) bindings)
-        ((variable-p x) (unify-variable x y bindings))
-        ((variable-p y) (unify-variable y x bindings))
-        ((and (consp x) (consp y))
-         (unify (rest x) (rest y)
-                (unify (first x) (first y) bindings)))
-        (t fail)))
+  (format t "~&unify x=~a, y=~a, bindings=~a" x y bindings)
+  (let ((res (cond ((eq bindings fail) fail)
+                   ((eql x y) bindings)
+                   ((variable-p x) (unify-variable x y bindings))
+                   ((variable-p y) (unify-variable y x bindings))
+                   ((and (consp x) (consp y))
+                    (unify (rest x) (rest y)
+                           (unify (first x) (first y) bindings)))
+                   (t fail))))
+    (format t "~&unify res=~a" res)
+    res))
 (defun subst-bindings (bindings x)
   "Substitute the value of variables in bindings into x,
   taking recursively bound variables into account."
@@ -230,8 +233,8 @@
 (format t "db: ~a~&" *db-predicates*)
 (format t "db.member: ~a~&" (get-clauses 'member))
 
-(<- (length () 0))
 (<- (length (?x . ?y) (1 + ?n)) (length ?y ?n))
+(<- (length () 0))
 (format t "db.length: ~a~&" (get-clauses 'length))
 
 ;; (?- (member 2 (1 2 3)))
@@ -240,5 +243,35 @@
 ;; (format t "~&~a" (occurs-check '?x '(?y . ?z) '((?y . 2))))
 
 ;; (?- (length () ?n))
-(?- (length (a) ?n))
-;; (?- (length (a b c d) ?n))
+;; (?- (length (a) ?n))
+;; (?- (length (a b) ?n))
+;; (?- (length ?list (1 + (1 + 0))))
+;; (?- (length ?list ?n))
+
+(<- (zebra ?h ?w ?z)
+ ;; Each house is of the form:
+ ;; (house nationality pet cigarette drink house-color)
+ (= ?h ((house norwegian ? ? ? ?)                  ;1,10
+        ?
+        (house ? ? ? milk ?) ? ?))                 ; 9
+ (member (house englishman ? ? ? red) ?h)          ; 2
+ (member (house spaniard dog ? ? ?) ?h)            ; 3
+ (member (house ? ? ? coffee green) ?h)            ; 4
+ (member (house ukrainian ? ? tea ?) ?h)           ; 5
+ (iright (house ? ? ? ? ivory)                     ; 6
+         (house 1111 green) ?h)
+ (member (house ? snails winston ? ?) ?h)          ; 7
+ (member (house ? ? kools ? yellow) ?h)            ; 8
+ (nextto (house ? ? chesterfield ? ?)              ;11
+         (house ? fox ? ? ?) ?h)
+ (nextto (house ? ? kools ? ?)                     ;12
+         (house ? horse ? ? ?) ?h)
+ (member (house ? ? luckystrike orange-juice ?) ?h);13
+ (member (house japanese ? parliaments ? ?) ?h)    ;14
+ (nextto (house norwegian ? ? ? ?)                 ;15
+         (house ? ? ? ? blue) ?h)
+ ;; Now for the questions:
+ (member (house ?w ? ? water ?) ?h)                ;Q1
+ (member (house ?z zebra ? ? ?) ?h))               ;Q2
+
+(?- (zebra ?houses ?water-drinker ?zebra-owner))

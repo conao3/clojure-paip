@@ -1,5 +1,6 @@
 (ns cljpaip.chapter11.prolog
   (:require
+   [clojure.walk :as walk]
    [cljpaip.chapter6.pat-match :refer [variable?]]
    [cljpaip.chapter6.eliza :refer [sublis]]
    [cljpaip.chapter11.unify :refer [cdr unify subst-bindings]]))
@@ -59,31 +60,25 @@
   ([goal bindings other-goals]
    (prove goal bindings other-goals 0))
   ([goal bindings other-goals depth]
-   (println (apply str (repeat depth " ")) {:goal goal :bindings bindings :other-goals other-goals})
-   (let [res (let [clauses (get-clauses (predicate goal))]
-               (if (sequential? clauses)
-                 (some (fn [clause]
-                         (let [new-clause (rename-variables clause)]
-                           (prove-all
-                            (concat (clause-body new-clause) other-goals)
-                            (unify goal (clause-head new-clause) bindings)
-                            (inc depth))))
-                       clauses)
-                 (clauses (cdr goal) bindings other-goals)))]
-     (println (apply str (repeat depth " ")) {:res res})
-     res)))
+   (let [clauses (get-clauses (predicate goal))]
+     (if (or (sequential? clauses) (nil? clauses))
+       (some (fn [clause]
+               (let [new-clause (rename-variables clause)]
+                 (prove-all
+                  (concat (clause-body new-clause) other-goals)
+                  (unify goal (clause-head new-clause) bindings)
+                  (inc depth))))
+             clauses)
+       (clauses (cdr goal) bindings other-goals)))))
 
 (defn prove-all
   ([goals bindings]
    (prove-all goals bindings 0))
   ([goals bindings depth]
-   (println (apply str (repeat depth " ")) {:goals goals :bindings bindings})
-   (let [res (cond
-               (nil? bindings) nil
-               (or (nil? goals) (empty? goals)) bindings
-               :else (prove (first goals) bindings (cdr goals) (inc depth)))]
-     (println (apply str (repeat depth " ")) {:res res})
-     res)))
+   (cond
+     (nil? bindings) nil
+     (or (nil? goals) (empty? goals)) bindings
+     :else (prove (first goals) bindings (cdr goals) (inc depth)))))
 
 (defn continue? []
   (case (read-line)
@@ -107,10 +102,10 @@
   (print "\nNo."))
 
 (defn replace-?-vars [exp]
-  (cond
-    (= exp '?) (gensym "?")
-    (not (sequential? exp)) exp
-    :else (cons (replace-?-vars (first exp)) (or (replace-?-vars (next exp)) []))))
+  (->> exp
+       (walk/prewalk
+        (fn [elm]
+          (cond-> elm (= elm '?) ((fn [_] (gensym "?"))))))))
 
 (defmacro <- [& clause]
   `(add-clause '~(replace-?-vars clause)))
