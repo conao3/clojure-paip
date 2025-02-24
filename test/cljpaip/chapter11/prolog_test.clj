@@ -4,6 +4,9 @@
    [clojure.test :as t]
    [cljpaip.chapter11.prolog :as sut]))
 
+(defn lines [& args]
+  (str (str/join "\n" args) "\n"))
+
 (t/deftest ?-test
   (do
     (sut/clear-db)
@@ -16,59 +19,49 @@
     (sut/<- (length () 0))
     (sut/<- (length (?x . ?y) (1 + ?n)) (length ?y ?n)))
 
-  (t/is (= "
-Yes
-No."
+  (t/is (= (lines "Yes" "No.")
            (with-out-str
              (with-in-str ";"
                (sut/?- (member 2 (1 2 3)))))))
 
-  (t/is (= "
-?list = (2 . ?rest2)
-?list = (?x3 . (2 . ?rest7))
-?list = (?x3 . (?x8 . (2 . ?rest12)))
-No."
+  (t/is (= (lines "?list = (2 . ?rest1)"
+                  "?list = (?x5 . (2 . ?rest6))"
+                  "?list = (?x5 . (?x10 . (2 . ?rest11)))"
+                  "No.")
            (let [gensym-cnt (atom 0)]
              (with-redefs [gensym #(-> % (str (swap! gensym-cnt inc)) symbol)]
                (with-out-str
-                 (with-in-str (str/join "\n" [";" ";" "."])
+                 (with-in-str (lines ";" ";" ".")
                    (sut/?- (member 2 ?list))))))))
 
-  (t/is (= "
-?item = ?item1
-?list = (?item1 . ?rest2)
-?item = ?item6
-?list = (?x3 . (?item6 . ?rest7))
-?item = ?item11
-?list = (?x3 . (?x8 . (?item11 . ?rest12)))
-No."
+  (t/is (= (lines "?item = ?item2"
+                  "?list = (?item2 . ?rest1)"
+                  "?item = ?item7"
+                  "?list = (?x5 . (?item7 . ?rest6))"
+                  "?item = ?item12"
+                  "?list = (?x5 . (?x10 . (?item12 . ?rest11)))"
+                  "No.")
            (let [gensym-cnt (atom 0)]
              (with-redefs [gensym #(-> % (str (swap! gensym-cnt inc)) symbol)]
                (with-out-str
-                 (with-in-str (str/join "\n" [";" ";" "."])
+                 (with-in-str (lines ";" ";" ".")
                    (sut/?- (member ?item ?list))))))))
 
-  (t/is (= "
-?n = (1 + (1 + (1 + (1 + 0))))
-No."
+  (t/is (= (lines "?n = (1 + (1 + (1 + (1 + 0))))" "No.")
            (with-out-str
-             (with-in-str (str/join "\n" [";" "."])
+             (with-in-str (lines ";" ".")
                (sut/?- (length (a b c d) ?n))))))
 
-  (t/is (= "
-?list = (?x1 . (?x4 . (nil)))
-No."
+  (t/is (= (lines "?list = (?x2 . (?x5 . (nil)))" "No.")
            (let [gensym-cnt (atom 0)]
              (with-redefs [gensym #(-> % (str (swap! gensym-cnt inc)) symbol)]
                (with-out-str
-                 (with-in-str (str/join "\n" [";" "."])
+                 (with-in-str (lines ";" ".")
                    (sut/?- (length ?list (1 + (1 + 0))))))))))
 
-  (t/is (= "
-?l = (?x1 . (?x4 . (nil)))
-No."
+  (t/is (= (lines "?l = (?x2 . (?x5 . (nil)))" "No.")
            (let [gensym-cnt (atom 0)]
              (with-redefs [gensym #(-> % (str (swap! gensym-cnt inc)) symbol)]
                (with-out-str
-                 (with-in-str (str/join "\n" [";" "."])
+                 (with-in-str (lines ";" ".")
                    (sut/?- (length ?l (1 + (1 + 0)))))))))))

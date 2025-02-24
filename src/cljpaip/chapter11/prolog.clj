@@ -23,26 +23,22 @@
 (defn non-anon-variable-p [x]
   (and (variable? x) (not (= x '?))))
 
-(defn unique-find-anywhere-if
-  ([predicate tree]
-   (unique-find-anywhere-if predicate tree nil))
-  ([predicate tree found-so-far]
-   (if (not (seq? tree))
-     (if (predicate tree)
-       (cond-> found-so-far
-         (not (some (partial = tree) found-so-far)) (conj tree))
-       found-so-far)
-     (recur predicate (first tree)
-            (unique-find-anywhere-if predicate (next tree) found-so-far)))))
+(defn unique-find-anywhere-if [predicate tree]
+  (let [res (transient #{})]
+    (->> tree
+         (walk/postwalk (fn [elm]
+                          (when (predicate elm)
+                            (conj! res elm)))))
+    (-> res persistent! vec)))
 
 (defn variables-in [exp]
   (unique-find-anywhere-if non-anon-variable-p exp))
 
 (defn rename-variables [x]
-  (sublis (->> (variables-in x)
-               (map (fn [var] [var (gensym (str var))]))
-               (into {}))
-          x))
+  (->> x
+       (sublis (->> (variables-in x)
+                    (map (fn [var] [var (gensym (str var))]))
+                    (into {})))))
 
 (defn prove [goal bindings other-goals]
   (let [clauses (get @db-clauses (first goal))]
@@ -56,10 +52,10 @@
       (clauses (cdr goal) bindings other-goals))))
 
 (defn prove-all [goals bindings]
-  (cond
-    (nil? bindings) nil
-    (or (nil? goals) (empty? goals)) bindings
-    :else (prove (first goals) bindings (cdr goals))))
+  (when bindings
+    (if (or (nil? goals) (empty? goals))
+      bindings
+      (prove (first goals) bindings (cdr goals)))))
 
 (defn continue? []
   (case (read-line)
@@ -71,16 +67,15 @@
 
 (defn show-prolog-vars [vars bindings other-goals]
   (if (empty? vars)
-    (print "\nYes")
+    (println "Yes")
     (doseq [var vars]
-      (print (str "\n" var " = " (subst-bindings bindings var)))))
-  (if (continue?)
-    nil
+      (println (str var " = " (subst-bindings bindings var)))))
+  (when-not (continue?)
     (prove-all other-goals bindings)))
 
 (defn top-level-prove [goals]
   (prove-all `(~@goals (~'show-prolog-vars ~@(variables-in goals))) {})
-  (print "\nNo."))
+  (println "No."))
 
 (defn replace-?-vars [exp]
   (->> exp
