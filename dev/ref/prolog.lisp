@@ -248,30 +248,42 @@
 ;; (?- (length ?list (1 + (1 + 0))))
 ;; (?- (length ?list ?n))
 
-(<- (zebra ?h ?w ?z)
- ;; Each house is of the form:
- ;; (house nationality pet cigarette drink house-color)
- (= ?h ((house norwegian ? ? ? ?)                  ;1,10
-        ?
-        (house ? ? ? milk ?) ? ?))                 ; 9
- (member (house englishman ? ? ? red) ?h)          ; 2
- (member (house spaniard dog ? ? ?) ?h)            ; 3
- (member (house ? ? ? coffee green) ?h)            ; 4
- (member (house ukrainian ? ? tea ?) ?h)           ; 5
- (iright (house ? ? ? ? ivory)                     ; 6
-         (house 1111 green) ?h)
- (member (house ? snails winston ? ?) ?h)          ; 7
- (member (house ? ? kools ? yellow) ?h)            ; 8
- (nextto (house ? ? chesterfield ? ?)              ;11
-         (house ? fox ? ? ?) ?h)
- (nextto (house ? ? kools ? ?)                     ;12
-         (house ? horse ? ? ?) ?h)
- (member (house ? ? luckystrike orange-juice ?) ?h);13
- (member (house japanese ? parliaments ? ?) ?h)    ;14
- (nextto (house norwegian ? ? ? ?)                 ;15
-         (house ? ? ? ? blue) ?h)
- ;; Now for the questions:
- (member (house ?w ? ? water ?) ?h)                ;Q1
- (member (house ?z zebra ? ? ?) ?h))               ;Q2
+;; (<- (zebra ?h ?w ?z)
+;;  ;; Each house is of the form:
+;;  ;; (house nationality pet cigarette drink house-color)
+;;  (= ?h ((house norwegian ? ? ? ?)                  ;1,10
+;;         ?
+;;         (house ? ? ? milk ?) ? ?))                 ; 9
+;;  (member (house englishman ? ? ? red) ?h)          ; 2
+;;  (member (house spaniard dog ? ? ?) ?h)            ; 3
+;;  (member (house ? ? ? coffee green) ?h)            ; 4
+;;  (member (house ukrainian ? ? tea ?) ?h)           ; 5
+;;  (iright (house ? ? ? ? ivory)                     ; 6
+;;          (house 1111 green) ?h)
+;;  (member (house ? snails winston ? ?) ?h)          ; 7
+;;  (member (house ? ? kools ? yellow) ?h)            ; 8
+;;  (nextto (house ? ? chesterfield ? ?)              ;11
+;;          (house ? fox ? ? ?) ?h)
+;;  (nextto (house ? ? kools ? ?)                     ;12
+;;          (house ? horse ? ? ?) ?h)
+;;  (member (house ? ? luckystrike orange-juice ?) ?h);13
+;;  (member (house japanese ? parliaments ? ?) ?h)    ;14
+;;  (nextto (house norwegian ? ? ? ?)                 ;15
+;;          (house ? ? ? ? blue) ?h)
+;;  ;; Now for the questions:
+;;  (member (house ?w ? ? water ?) ?h)                ;Q1
+;;  (member (house ?z zebra ? ? ?) ?h))               ;Q2
+;; 
+;; (?- (zebra ?houses ?water-drinker ?zebra-owner))
 
-(?- (zebra ?houses ?water-drinker ?zebra-owner))
+(<- (prove ?goal) (prove-all (?goal)))
+(<- (prove-all nil))
+(<- (prove-all (?goal . ?goals))
+    (clause (<- ?goal . ?body))
+    (concat ?body ?goals ?new-goals)
+    (prove-all ?new-goals))
+
+(<- (clause (<- (mem ?x (?x . ?y)))))
+(<- (clause (<- (mem ?x (? . ?z)) (mem ?x ?z))))
+
+(?- (prove (mem ?x (1 2 3))))
