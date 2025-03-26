@@ -2,11 +2,23 @@
   (:require
    [cljpaip.simple.util :refer [cdr variable?]]))
 
+(def ^:dynamic *occurs-check* true)
+
+(declare unify)
+
+(defn occur? [sym x bindings]
+  (cond
+    (nil? x) false
+    (= sym x) true
+    (and (variable? x) (find bindings x)) (occur? sym (get bindings x) bindings)
+    (sequential? x) (or (occur? sym (first x) bindings)
+                        (occur? sym (cdr x) bindings))))
+
 (defn unify-variable [sym x bindings]
   (cond
-    (find bindings sym) (when (= (sym bindings) x) bindings)
-    ;; (find bindings sym) (unify (sym bindings) x bindings)
-    (and (variable? x) (find bindings x)) (when (= sym (x bindings)) bindings)
+    (find bindings sym) (unify (sym bindings) x bindings)
+    (and (variable? x) (find bindings x)) (unify sym (x bindings) bindings)
+    (and *occurs-check* (occur? sym x bindings)) nil
     :else (assoc bindings sym x)))
 
 (defn unify
