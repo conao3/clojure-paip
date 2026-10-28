@@ -31,7 +31,7 @@
             projectSrc = ./.;
             name = "com.github.conao3/cljpaip";
             main-ns = "cljpaip.core";
-            jdkRunner = pkgs.jdk17_headless;
+            jdkRunner = pkgs.jdk25_headless;
           };
 
           native = cljpkgs.mkGraalBin {
@@ -42,7 +42,7 @@
         devShell = pkgs.mkShell {
           buildInputs = [
             pkgs.clojure
-            pkgs.openjdk
+            pkgs.jdk25
           ];
         };
 
