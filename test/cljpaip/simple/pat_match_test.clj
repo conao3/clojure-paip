@@ -1,7 +1,7 @@
 (ns cljpaip.simple.pat-match-test
   (:require
    [clojure.test :as t]
-   [cljpaip.chapter6.simple-pat-match :as sut]))
+   [cljpaip.simple.pat-match :as sut]))
 
 (t/deftest test-literal-match
   (t/is (= 1 1))
